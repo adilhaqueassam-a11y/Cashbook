@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mera Vyapar CashBook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; padding-bottom: 75px; }
+        .top-navbar { background: #1b5e20; color: white; padding: 14px 16px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .stat-card { border-radius: 12px; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.06); padding: 14px; text-align: center; }
+        .stat-in { background-color: #e8f5e9; color: #2e7d32; }
+        .stat-out { background-color: #ffebee; color: #c62828; }
+        .stat-balance { background-color: #e3f2fd; color: #1565c0; }
+        .tx-card { border-radius: 10px; background: white; margin-bottom: 8px; padding: 12px 14px; border-left: 5px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .tx-in { border-left-color: #2e7d32; }
+        .tx-out { border-left-color: #c62828; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e0e0e0; z-index: 1000; }
+        .nav-btn { background: none; border: none; color: #757575; font-size: 11px; display: flex; flex-direction: column; align-items: center; font-weight: 500; }
+        .nav-btn i { font-size: 19px; margin-bottom: 3px; }
+        .nav-btn.active { color: #1b5e20; font-weight: bold; }
+        .action-btns { position: fixed; bottom: 75px; left: 0; right: 0; display: flex; justify-content: center; gap: 14px; padding: 0 16px; z-index: 999; }
+        .btn-entry { flex: 1; border-radius: 30px; font-weight: 600; padding: 11px 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="top-navbar d-flex justify-content-between align-items-center">
+    <div>
+        <h5 class="m-0 fw-bold"><i class="fa-solid fa-book-open me-2"></i>Vyapar CashBook</h5>
+        <small class="opacity-75">Dukan & Hisab-Kitab</small>
+    </div>
+    <span class="badge bg-light text-dark"><i class="fa-solid fa-shield-halved text-success me-1"></i>100% Offline Safe</span>
+</div>
+
+<div class="container my-3" id="homeView">
+    <div class="row g-2 mb-3">
+        <div class="col-4">
+            <div class="stat-card stat-balance">
+                <small class="d-block text-muted">Net Cash</small>
+                <h6 class="fw-bold mb-0" id="totalBalance">₹0</h6>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="stat-card stat-in">
+                <small class="d-block text-muted">Total Jama (+)</small>
+                <h6 class="fw-bold mb-0" id="totalIn">₹0</h6>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="stat-card stat-out">
+                <small class="d-block text-muted">Kharcha (-)</small>
+                <h6 class="fw-bold mb-0" id="totalOut">₹0</h6>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <h6 class="m-0 fw-bold text-secondary">Rozana Entries</h6>
+        <small class="text-muted" id="txCount">0 entries</small>
+    </div>
+
+    <div id="txList">
+        <div class="text-center py-4 text-muted">Abhi tak koi entry nahi hui hai. Niche diye button se Jama ya Kharcha jodein.</div>
+    </div>
+</div>
+
+<div class="container my-3 d-none" id="partyView">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold m-0 text-dark">Customer & Supplier Khata</h5>
+    </div>
+    <div class="text-center py-4 text-muted">Yahan party hisab manage karein.</div>
+</div>
+
+<div class="container my-3 d-none" id="reportsView">
+    <div class="card p-3 mb-3 border-0 shadow-sm">
+        <h6 class="fw-bold mb-2">Statement & Export</h6>
+        <p class="text-muted small">Pura hisab-kitab Excel file me download karein.</p>
+        <button class="btn btn-primary rounded-pill" onclick="exportCSV()"><i class="fa-solid fa-file-excel me-2"></i>Download Excel (CSV)</button>
+    </div>
+</div>
+
+<div class="action-btns" id="actionButtons">
+    <button class="btn btn-success btn-entry" onclick="openEntryModal('IN')"><i class="fa-solid fa-plus-circle me-1"></i>+ Cash In (Jama)</button>
+    <button class="btn btn-danger btn-entry" onclick="openEntryModal('OUT')"><i class="fa-solid fa-minus-circle me-1"></i>- Cash Out (Kharcha)</button>
+</div>
+
+<div class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('home', this)"><i class="fa-solid fa-receipt"></i><span>Daily Book</span></button>
+    <button class="nav-btn" onclick="switchTab('party', this)"><i class="fa-solid fa-users"></i><span>Khata / Parties</span></button>
+    <button class="nav-btn" onclick="switchTab('reports', this)"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></button>
+</div>
+
+<!-- Modal Entry -->
+<div class="modal fade" id="entryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalTitle">Entry Karein</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="entryForm">
+                    <input type="hidden" id="entryType">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Amount (Rupaye) *</label>
+                        <input type="number" class="form-control form-control-lg fw-bold" id="amount" placeholder="₹ 0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vivaran / Name (Kisse mila ya kisko diya)</label>
+                        <input type="text" class="form-control" id="description" placeholder="Customer / Supplier name ya saman">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Mode</label>
+                        <select class="form-select" id="mode">
+                            <option value="Cash">Cash (Rokad)</option>
+                            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                            <option value="Bank">Bank Transfer</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold" id="submitBtn">Save Entry</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let transactions = JSON.parse(localStorage.getItem('vyapar_txs')) || [];
+let entryModal = new bootstrap.Modal(document.getElementById('entryModal'));
+
+function render() {
+    let list = document.getElementById('txList');
+    let totalIn = 0, totalOut = 0;
+    list.innerHTML = '';
+    
+    if (transactions.length === 0) {
+        list.innerHTML = '<div class="text-center py-4 text-muted">Abhi tak koi entry nahi hui hai.</div>';
+    } else {
+        transactions.slice().reverse().forEach((tx, idx) => {
+            let actualIdx = transactions.length - 1 - idx;
+            if(tx.type === 'IN') totalIn += parseFloat(tx.amount);
+            else totalOut += parseFloat(tx.amount);
+
+            let div = document.createElement('div');
+            div.className = `tx-card ${tx.type === 'IN' ? 'tx-in' : 'tx-out'}`;
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold fs-6">${tx.desc || (tx.type==='IN'?'Jama':'Kharcha')}</div>
+                        <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${tx.date} • <span class="badge bg-light text-dark border">${tx.mode}</span></small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-6 ${tx.type==='IN'?'text-success':'text-danger'}">${tx.type==='IN'?'+':'-'} ₹${parseFloat(tx.amount).toLocaleString('en-IN')}</div>
+                        <button class="btn btn-sm text-danger p-0 mt-1" onclick="deleteTx(${actualIdx})"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+
+    document.getElementById('totalIn').innerText = '₹' + totalIn.toLocaleString('en-IN');
+    document.getElementById('totalOut').innerText = '₹' + totalOut.toLocaleString('en-IN');
+    let bal = totalIn - totalOut;
+    let balElem = document.getElementById('totalBalance');
+    balElem.innerText = '₹' + bal.toLocaleString('en-IN');
+    balElem.className = 'fw-bold mb-0 ' + (bal >= 0 ? 'text-primary' : 'text-danger');
+    document.getElementById('txCount').innerText = transactions.length + ' entries';
+}
+
+function openEntryModal(type) {
+    document.getElementById('entryType').value = type;
+    document.getElementById('amount').value = '';
+    document.getElementById('description').value = '';
+    let btn = document.getElementById('submitBtn');
+    if (type === 'IN') {
+        document.getElementById('modalTitle').innerText = '+ Cash In (Jama Entry)';
+        btn.className = 'btn btn-success w-100 py-2 fw-bold';
+    } else {
+        document.getElementById('modalTitle').innerText = '- Cash Out (Kharcha Entry)';
+        btn.className = 'btn btn-danger w-100 py-2 fw-bold';
+    }
+    entryModal.show();
+}
+
+document.getElementById('entryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let type = document.getElementById('entryType').value;
+    let amount = document.getElementById('amount').value;
+    let desc = document.getElementById('description').value;
+    let mode = document.getElementById('mode').value;
+    let date = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+
+    transactions.push({ type, amount, desc, mode, date });
+    localStorage.setItem('vyapar_txs', JSON.stringify(transactions));
+    entryModal.hide();
+    render();
+});
+
+function deleteTx(index) {
+    if(confirm('Kya aap is entry ko delete karna chahte hain?')) {
+        transactions.splice(index, 1);
+        localStorage.setItem('vyapar_txs', JSON.stringify(transactions));
+        render();
+    }
+}
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('homeView').classList.add('d-none');
+    document.getElementById('partyView').classList.add('d-none');
+    document.getElementById('reportsView').classList.add('d-none');
+    let actBtns = document.getElementById('actionButtons');
+
+    if (tab === 'home') {
+        document.getElementById('homeView').classList.remove('d-none');
+        actBtns.classList.remove('d-none');
+    } else if (tab === 'party') {
+        document.getElementById('partyView').classList.remove('d-none');
+        actBtns.classList.add('d-none');
+    } else {
+        document.getElementById('reportsView').classList.remove('d-none');
+        actBtns.classList.add('d-none');
+    }
+}
+
+function exportCSV() {
+    let csv = "Type,Amount,Description,Mode,Date\n";
+    transactions.forEach(t => {
+        csv += `"${t.type}","${t.amount}","${t.desc || ''}","${t.mode}","${t.date}"\n`;
+    });
+    let blob = new Blob([csv], { type: 'text/csv' });
+    let url = window.URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = "vyapar_cashbook_report.csv";
+    a.click();
+}
+
+render();
+</script>
+</body>
+</html>
